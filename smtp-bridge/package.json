@@ -1,0 +1,12 @@
+{
+  "name": "smtp-bridge",
+  "version": "1.0.0",
+  "description": "SMTP-to-HTTP bridge for PaysysLabs email API",
+  "main": "server.js",
+  "dependencies": {
+    "smtp-server": "^3.13.0",
+    "mailparser": "^3.7.0",
+    "pg": "^8.12.0",
+    "bcryptjs": "^2.4.3"
+  }
+}

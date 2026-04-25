@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://api.paysyslabs.com:8090/api/auth/providers)",
+      "Bash(docker exec *)",
+      "Bash(docker compose *)",
+      "Bash(curl -sv http://api.paysyslabs.com:8090/api/auth/providers)",
+      "Bash(docker stats *)",
+      "Bash(curl -si \"http://REDACTED_SERVER_IP:8090/accept-invite?id=cmodawwtg000u0il924lblsau\")",
+      "WebSearch",
+      "Bash(docker run *)"
+    ]
+  }
+}
