@@ -123,8 +123,10 @@ sleep 5
 # ────────────────────────────────────────────────────────────────
 section "STEP 8: Final Verification"
 
+PUBLIC_URL=$(grep '^PUBLIC_URL=' "${SCRIPT_DIR}/.env" | cut -d= -f2-)
+
 # Test the API ping through nginx
-if curl -sf http://10.0.150.126:8090/api/ping > /dev/null 2>&1; then
+if curl -sf "${PUBLIC_URL}/api/ping" > /dev/null 2>&1; then
     log "API ping through nginx: ✓"
 else
     warn "API ping through nginx: FAILED (may need a few more seconds)"
@@ -135,9 +137,9 @@ echo -e "${BOLD}${GREEN}══════════════════�
 echo -e "${BOLD}${GREEN}   Hoppscotch is UP and running!${NC}"
 echo -e "${BOLD}${GREEN}══════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "  ${BOLD}Main App:${NC}    http://api.paysyslabs.com:8090"
-echo -e "  ${BOLD}Admin Panel:${NC} http://api.paysyslabs.com:8090/admin"
-echo -e "  ${BOLD}API:${NC}         http://api.paysyslabs.com:8090/api"
+echo -e "  ${BOLD}Main App:${NC}    ${PUBLIC_URL}"
+echo -e "  ${BOLD}Admin Panel:${NC} ${PUBLIC_URL}/admin"
+echo -e "  ${BOLD}API:${NC}         ${PUBLIC_URL}/api"
 echo -e "  ${BOLD}Keycloak:${NC}    http://api.paysyslabs.com:8080"
 echo ""
 echo -e "  ${BOLD}First login:${NC} Use magic link (check logs)"
