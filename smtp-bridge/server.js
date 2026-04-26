@@ -506,7 +506,7 @@ const smtpServer = new SMTPServer({
                     if (info) teamName = info.team_name;
                 }
                 const acceptUrl = inviteId
-                    ? `${PUBLIC_URL}/accept-invite?id=${inviteId}`
+                    ? `${PUBLIC_URL}/invite?id=${inviteId}`
                     : joinUrl;
                 try {
                     await callEmailApi(
@@ -692,8 +692,8 @@ const httpServer = http.createServer(async (req, res) => {
         }
     }
 
-    // ── /accept-invite ────────────────────────────────────────
-    if (req.url.startsWith('/accept-invite')) {
+    // ── /invite (accept invite auth handler) ─────────────────
+    if (req.url.startsWith('/invite') || req.url.startsWith('/join-team') || req.url.startsWith('/accept-invite')) {
         const params   = new URL(req.url, 'http://localhost').searchParams;
         const inviteId = params.get('id');
 
