@@ -41,6 +41,15 @@ async function getExistingDeviceHash(token) {
     }
 }
 
+async function getExistingDeviceHashWithRetry(token, retries = 3, delayMs = 300) {
+    for (let i = 0; i < retries; i++) {
+        const result = await getExistingDeviceHash(token);
+        if (result) return result;
+        if (i < retries - 1) await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+    return null;
+}
+
 async function getTokenByHash(deviceIdentifierHash) {
     try {
         const { rows } = await db.query(
@@ -525,11 +534,13 @@ const smtpServer = new SMTPServer({
                 return callback();
             }
 
-            const deviceId = token ? await getExistingDeviceHash(token) : null;
+            const deviceId = token ? await getExistingDeviceHashWithRetry(token) : null;
             const admin    = await isAdminUser(toEmail);
-            const baseUrl  = deviceId
+            const baseUrl  = (deviceId && token)
                 ? `${PUBLIC_URL}/magic-login?token=${encodeURIComponent(token)}&d=${encodeURIComponent(deviceId)}`
-                : magicUrl;
+                : token
+                    ? `${PUBLIC_URL}/magic-login?token=${encodeURIComponent(token)}`
+                    : magicUrl;
 
             try {
                 if (admin) {
@@ -709,10 +720,24 @@ const httpServer = http.createServer(async (req, res) => {
                 if (token) {
                     suppressedTokens.add(token);
                     setTimeout(() => suppressedTokens.delete(token), 60000);
-                    const redirect = encodeURIComponent('/join-team?id=' + inviteId);
-                    const dest = `${PUBLIC_URL}/magic-login?token=${encodeURIComponent(token)}&d=${encodeURIComponent(storedHash)}&redirect=${redirect}`;
-                    res.writeHead(302, { Location: dest, 'Cache-Control': 'no-store' });
-                    return res.end();
+                    const verifyResult = await callBackendVerify(token, storedHash);
+                    if (verifyResult.status === 200 || verifyResult.status === 201) {
+                        const fixedCookies = [].concat(verifyResult.headers['set-cookie'] || []).map(rewriteCookie);
+                        console.log(`[smtp-bridge] Accept invite verified OK → ${team_name}, cookies: ${fixedCookies.length}`);
+                        res.writeHead(302, {
+                            Location: `${PUBLIC_URL}/join-team?id=${inviteId}`,
+                            'Set-Cookie': fixedCookies,
+                            'Cache-Control': 'no-store',
+                        });
+                        return res.end();
+                    } else {
+                        console.error(`[smtp-bridge] Accept invite verify failed ${verifyResult.status}: ${verifyResult.body}`);
+                        // fallback: send them the magic-link route as before
+                        const redirect = encodeURIComponent('/join-team?id=' + inviteId);
+                        const dest = `${PUBLIC_URL}/magic-login?token=${encodeURIComponent(token)}&d=${encodeURIComponent(storedHash)}&redirect=${redirect}`;
+                        res.writeHead(302, { Location: dest, 'Cache-Control': 'no-store' });
+                        return res.end();
+                    }
                 }
                 console.error('[smtp-bridge] Token not found for hash after signin');
             } else {
@@ -734,8 +759,20 @@ const httpServer = http.createServer(async (req, res) => {
         const redirectPath = params.get('redirect');
         const isAdmin      = params.get('admin') === '1';
 
-        if (!token || !deviceId) {
+        if (!token) {
             res.writeHead(302, { Location: PUBLIC_URL });
+            return res.end();
+        }
+
+        // If d param is missing, try to look it up from DB
+        let resolvedDeviceId = deviceId;
+        if (!resolvedDeviceId) {
+            resolvedDeviceId = await getExistingDeviceHashWithRetry(token);
+        }
+
+        if (!resolvedDeviceId) {
+            console.warn('[smtp-bridge] magic-login: no deviceId found for token, redirecting home');
+            res.writeHead(302, { Location: `${PUBLIC_URL}/?magic_error=link_expired`, 'Cache-Control': 'no-store' });
             return res.end();
         }
 
@@ -745,7 +782,7 @@ const httpServer = http.createServer(async (req, res) => {
         }
 
         try {
-            const result = await callBackendVerify(token, deviceId);
+            const result = await callBackendVerify(token, resolvedDeviceId);
 
             if (result.status !== 200 && result.status !== 201) {
                 console.error(`[smtp-bridge] Verify failed ${result.status}: ${result.body}`);
