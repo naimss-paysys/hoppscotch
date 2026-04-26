@@ -157,7 +157,6 @@ function callBackendSignin(email) {
             headers: {
                 'Content-Type':   'application/json',
                 'Content-Length': Buffer.byteLength(body),
-                'Host':           'api.paysyslabs.com',
             },
         }, (res) => {
             let data = '';
@@ -181,7 +180,6 @@ function callBackendVerify(token, deviceIdentifier) {
             headers: {
                 'Content-Type':   'application/json',
                 'Content-Length': Buffer.byteLength(body),
-                'Host':           'api.paysyslabs.com',
             },
         }, (res) => {
             let data = '';

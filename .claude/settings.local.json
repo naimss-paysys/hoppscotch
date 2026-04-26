@@ -8,7 +8,8 @@
       "Bash(docker stats *)",
       "Bash(curl -si \"http://REDACTED_SERVER_IP:8090/accept-invite?id=cmodawwtg000u0il924lblsau\")",
       "WebSearch",
-      "Bash(docker run *)"
+      "Bash(docker run *)",
+      "Bash(python3 -c \"import json,sys; c=json.load\\(sys.stdin\\)[0]; [print\\(e\\) for e in c['Config']['Env'] if any\\(k in e for k in ['GITHUB','VITE_BASE','PUBLIC_URL','ALLOW_SECURE','WHITELISTED','CALLBACK']\\)]\")"
     ]
   }
 }
