@@ -114,6 +114,7 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "api.paysyslabs.com:REDACTED_SERVER_IP"
+      - "mixxmmp-test.tigo.co.tz:10.245.0.169"
     networks:
       - hopps-net
     deploy:
