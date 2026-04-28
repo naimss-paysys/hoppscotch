@@ -77,11 +77,14 @@ function transformRequest(metaData, reqBody) {
     }
 }
 
-// ── HTTP helper ────────────────────────────────────────────────
+
 function makeRequest(options, bodyBuf) {
     return new Promise((resolve, reject) => {
         const lib = options.protocol === 'https:' ? https : http;
-        const req = lib.request(options, (res) => {
+        const req = lib.request({
+            ...options,
+            rejectUnauthorized: false   // ← ADD THIS LINE
+        }, (res) => {
             const chunks = [];
             res.on('data', chunk => chunks.push(chunk));
             res.on('end', () => resolve({
@@ -98,7 +101,7 @@ function makeRequest(options, bodyBuf) {
         req.end();
     });
 }
-
+// ── HTTP helper ────────────────────────────────────────────────
 // ── Main server ────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
