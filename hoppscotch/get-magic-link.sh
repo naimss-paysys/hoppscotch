@@ -13,7 +13,7 @@ if [ -z "${TOKEN}" ]; then
     echo ""
     echo "  curl -s -X POST ${PUBLIC_URL}/api/auth/signin \\"
     echo "    -H 'Content-Type: application/json' \\"
-    echo "    -d '{\"email\":\"admin@paysyslabs.com\"}'"
+    echo "    -d '{\"email\":\"naimatullah.khan@paysyslabs.com\"}'"
     echo ""
     echo "Then run this script again."
     exit 0
