@@ -256,7 +256,7 @@ services:
     image: ngrok/ngrok:latest
     container_name: hopps_ngrok
     restart: unless-stopped
-    command: http --url=dander-pork-headgear.ngrok-free.dev nginx:80
+    command: http --url=dander-pork-headgear.ngrok-free.dev --pooling-enabled nginx:80
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
     depends_on:
