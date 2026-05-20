@@ -219,7 +219,7 @@ const server = http.createServer(async (req, res) => {
         method:      fwdMethod    = 'GET',
         url:         fwdUrl       = '',
         headers:     fwdHeaders   = {},
-        body:        fwdBody      = null,
+        data:        fwdBody      = null,
         wantsBinary               = false,
     } = reqData;
 
