@@ -125,7 +125,22 @@ const server = http.createServer(async (req, res) => {
     // ── /forward — transform + forward to Spring service ──────
     // Accepts: { "target_url": "...", "meta_data": {...}, "body": {...} }
     // Transforms to CSV body + SHA256 signature, forwards to target_url/{sig}
+    // MUST be called with POST — browsers/ngrok strip bodies from GET requests.
+    // Use meta_data.method to control the downstream HTTP method.
     if (url === '/forward') {
+        if (req.method !== 'POST') {
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({
+                error: 'Method Not Allowed — /forward must be called with POST.',
+                hint:  'Set "method" inside meta_data to control the downstream request method (GET/POST/etc).',
+            }));
+        }
+
+        if (rawBody.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            return res.end(JSON.stringify({ error: 'Empty body — send JSON: {target_url, meta_data, body}' }));
+        }
+
         let payload;
         try {
             payload = JSON.parse(rawBody.toString());
@@ -187,10 +202,14 @@ const server = http.createServer(async (req, res) => {
         return res.end(JSON.stringify({ success: false, data: { message: 'Only POST accepted' } }));
     }
 
+    console.log(`[proxy] raw body len=${rawBody.length} method=${req.method} url=${req.url}`);
+    console.log(`[proxy] raw body:`, rawBody.toString().substring(0, 300));
+
     let payload;
     try {
         payload = JSON.parse(rawBody.toString());
     } catch {
+        console.log(`[proxy] JSON parse failed, raw was:`, rawBody.toString().substring(0, 200));
         res.writeHead(400, { 'Content-Type': 'application/json' });
         return res.end(JSON.stringify({ success: false, data: { message: 'Invalid JSON' } }));
     }
@@ -209,11 +228,14 @@ const server = http.createServer(async (req, res) => {
         return res.end(JSON.stringify({ success: false, data: { message: 'Missing url' } }));
     }
 
-    console.log(`[proxy] ${fwdMethod} ${fwdUrl}`);
+    console.log(`[proxy] ${fwdMethod} ${fwdUrl} | bodyType=${typeof fwdBody} bodyLen=${fwdBody ? String(fwdBody).length : 0}`);
+    console.log(`[proxy] payload keys:`, Object.keys(reqData));
 
     try {
         const target  = new URL(fwdUrl);
-        const bodyBuf = fwdBody ? Buffer.from(fwdBody) : Buffer.alloc(0);
+        const bodyBuf = fwdBody
+            ? Buffer.from(typeof fwdBody === 'string' ? fwdBody : JSON.stringify(fwdBody))
+            : Buffer.alloc(0);
         const headers = { ...fwdHeaders };
 
         if (bodyBuf.length && !headers['content-length'] && !headers['Content-Length']) {
